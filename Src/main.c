@@ -57,6 +57,8 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN Includes */
+#include "usbd_analog_io.h"
+#include <math.h>
 
 /* USER CODE END Includes */
 
@@ -64,7 +66,7 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+#define SAMPLES 200
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -76,7 +78,11 @@ void SystemClock_Config(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-
+uint16_t adc2 = 0;
+uint16_t adc1 = 0;
+uint16_t sinus[200];
+uint16_t constant[200]= {500};
+uint8_t input_report[7] = {0};
 /* USER CODE END 0 */
 
 /**
@@ -87,7 +93,19 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	uint16_t sample;
+	for (uint8_t i = 0; i < SAMPLES; i++)
+	{
+		sample = (uint16_t)rint(( sin(i*2*3.14/SAMPLES)+1)*2048 );
+		if (sample >= 4095)
+		{
+			sinus[i] = 4095;
+		}
+		else
+		{
+			sinus[i] = sample;
+		}
+	}
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -117,7 +135,16 @@ int main(void)
   MX_TIM6_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+  USBD_HID_Analog_IO_Init(&analog_io);
 
+  // DAC ==========================================
+   HAL_DAC_Init(&hdac);
+   HAL_TIM_Base_Start(&htim6);
+   HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t*)constant, SAMPLES, DAC_ALIGN_12B_R);
+   // ADC ==========================================
+   HAL_TIM_Base_Start(&htim2);
+   HAL_ADC_Start_DMA(&hadc1, (uint32_t*)analog_io.in[0], 1);
+   HAL_ADC_Start_DMA(&hadc2, (uint32_t*)analog_io.in[1], 1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -128,7 +155,9 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
-
+	  HAL_Delay(100);
+	  USBD_HID_Analog_IO_CreateReport(input_report);
+	  USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS,(uint8_t*)&input_report, 7);
   }
   /* USER CODE END 3 */
 
