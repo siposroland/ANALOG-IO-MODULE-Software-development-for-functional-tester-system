@@ -148,6 +148,8 @@ int main(void)
    HAL_TIM_Base_Start_IT(&htim2);
    HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc1, 20);
    HAL_ADC_Start_DMA(&hadc2, (uint32_t*)adc2, 20);
+
+   HAL_TIM_Base_Start_IT(&htim3);
   /* USER CODE END 2 */
 
   /* Infinite loop */

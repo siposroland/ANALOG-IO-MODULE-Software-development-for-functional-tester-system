@@ -77,6 +77,8 @@
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
+#define PPS_Pin GPIO_PIN_12
+#define PPS_GPIO_Port GPIOC
 #define TIMER_DRAIN_Pin GPIO_PIN_2
 #define TIMER_DRAIN_GPIO_Port GPIOD
 #define SWO_Pin GPIO_PIN_3
