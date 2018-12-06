@@ -38,6 +38,7 @@
 /* USER CODE BEGIN 0 */
 uint16_t scheduler_timer = 0;
 #include "usbd_analog_io.h"
+#include "gpio.h"
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -48,7 +49,7 @@ extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
 extern DMA_HandleTypeDef hdma_dac1;
 extern TIM_HandleTypeDef htim3;
-
+uint8_t external_counter = 0;
 /******************************************************************************/
 /*            Cortex-M4 Processor Interruption and Exception Handlers         */ 
 /******************************************************************************/
@@ -248,11 +249,14 @@ void ADC_IRQHandler(void)
 void TIM3_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM3_IRQn 0 */
-
+	external_counter ++;
   /* USER CODE END TIM3_IRQn 0 */
   HAL_TIM_IRQHandler(&htim3);
   /* USER CODE BEGIN TIM3_IRQn 1 */
-
+  if (external_counter > 59)
+  {
+	  toggle_pps();
+  }
   /* USER CODE END TIM3_IRQn 1 */
 }
 

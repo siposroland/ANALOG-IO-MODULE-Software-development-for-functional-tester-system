@@ -121,7 +121,18 @@ void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 2 */
+void toggle_pps(void)
+{
+	if (HAL_GPIO_ReadPin(PPS_GPIO_Port, PPS_Pin) == GPIO_PIN_SET)
+	{
+		HAL_GPIO_WritePin(PPS_GPIO_Port, PPS_Pin, GPIO_PIN_RESET);
+	}
+	else
+	{
+		HAL_GPIO_WritePin(PPS_GPIO_Port, PPS_Pin, GPIO_PIN_SET);
+	}
 
+}
 /* USER CODE END 2 */
 
 /**
