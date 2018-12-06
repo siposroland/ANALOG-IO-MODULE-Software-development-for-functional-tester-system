@@ -68,9 +68,8 @@
  } HID_ANALOG_IO_Output;
 
  typedef enum {
-	 OUT_CONST,
-	 OUT_SINUS,
-	 OUT_TRIANGLE
+	 OUT_CONST = 5,
+	 OUT_SINUS = 7
  } HID_ANALOG_IO_Out_Type;
 
  typedef enum {

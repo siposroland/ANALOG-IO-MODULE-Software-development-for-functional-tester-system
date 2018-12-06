@@ -63,7 +63,9 @@ ANALOG_IO_Report_Flag analog_io_report_flag;
 HID_ANALOG_IO_TRIGGER_Event analog_io_trig_events[ANALOG_IO_MAX_TRIG_NUM];
 
 /* Functions */
-
+extern uint16_t sinus[200];
+extern uint16_t constant[200];
+extern DAC_HandleTypeDef hdac;
 /**
   * @brief  USBH_HID_Digital_IO_Init
   *         The function init the HID digital IO.
@@ -145,7 +147,15 @@ void USBD_HID_Analog_IO_CreateReport(uint8_t* report)
   */
 void USBD_HID_Analog_IO_Set_Changes(uint8_t* output_buff)
 {
-	// TODO
+	if(output_buff[0] == OUT_SINUS)
+	{
+		analog_io.type[0] = OUT_SINUS;
+	}
+	else if (output_buff[0] == OUT_CONST)
+	{
+		analog_io.value[0] = output_buff[1];
+		analog_io.type[0] = OUT_CONST;
+	}
 }
 
 /**
@@ -172,7 +182,20 @@ void USBD_HID_ANALOG_IO_Trigger (uint8_t* output_buff)
   */
 void USBD_HID_Analog_IO_SwitchConfig(void)
 {
-	// TODO
+	HAL_DAC_Stop_DMA(&hdac, DAC_CHANNEL_1);
+	if(analog_io.type == OUT_SINUS)
+	{
+		HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t*)sinus, 200, DAC_ALIGN_12B_R);
+	}
+	else if (analog_io.type == OUT_CONST)
+	{
+		uint8_t i = 0;
+		for(i = 0; i < 200; i++)
+		{
+			constant[i] = analog_io.value;
+		}
+		HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t*)constant, 200, DAC_ALIGN_12B_R);
+	}
 }
 
 
@@ -201,7 +224,14 @@ void USBD_HID_Analog_IO_Reset_Trigger_Event(HID_ANALOG_IO_TRIGGER_Event* trig_ev
   */
 void USBD_HID_Analog_IO_Process_Trigger_Event(uint8_t* output_buff, HID_ANALOG_IO_TRIGGER_Event* t)
 {
-	// TODO
+	t->enable = output_buff[0];
+	t->num_of_ANDs = output_buff[1];
+	t->params[0].adc_num = output_buff[2];
+	t->params[0].adc_val = output_buff[3];
+	t->params[0].operator = output_buff[4];
+	t->params[1].adc_num = output_buff[5];
+	t->params[1].adc_val = output_buff[6];
+	t->params[1].operator = output_buff[7];
 }
 
 /**
@@ -209,9 +239,63 @@ void USBD_HID_Analog_IO_Process_Trigger_Event(uint8_t* output_buff, HID_ANALOG_I
   *         The function init the HID digital IO.
   * @retval USBH Status
   */
-/*HID_Analog_IO_Trigger USBD_HID_Analog_IO_Check_Trigger_Event(HID_ANALOG_IO_TRIGGER_Event* t, uint8_t id)
+HID_ANALOG_IO_Trigger USBD_HID_Analog_IO_Check_Trigger_Event(HID_ANALOG_IO_TRIGGER_Event* t, uint8_t id)
 {
-	// TODO
-}*/
+
+	if (t->enable == 1)
+	{
+		switch(t->num_of_ANDs)
+		{
+			case 0:
+				if(t->params[0].operator == MORETHAN)
+				{
+					if (analog_io.in[t->params[0].adc_num] >= t->params[0].adc_val)
+					{
+						return TRIGGERED;
+					}
+				}
+				else
+				{
+					if (analog_io.in[t->params[0].adc_num] <= t->params[0].adc_val)
+					{
+						return TRIGGERED;
+					}
+				}
+			break;
+			case 1:
+				if(t->params[0].operator == MORETHAN && t->params[1].operator == MORETHAN)
+				{
+					if ((analog_io.in[t->params[0].adc_num] >= t->params[0].adc_val) && (analog_io.in[t->params[1].adc_num] >= t->params[1].adc_val))
+					{
+						return TRIGGERED;
+					}
+				}
+				else if(t->params[0].operator == MORETHAN && t->params[1].operator == LOWERTHAN)
+				{
+					if ((analog_io.in[t->params[0].adc_num] >= t->params[0].adc_val) && (analog_io.in[t->params[1].adc_num] <= t->params[1].adc_val))
+					{
+						return TRIGGERED;
+					}
+				}
+				else if(t->params[0].operator == LOWERTHAN && t->params[1].operator == MORETHAN)
+				{
+					if ((analog_io.in[t->params[0].adc_num] <= t->params[0].adc_val) && (analog_io.in[t->params[1].adc_num] >= t->params[1].adc_val))
+					{
+						return TRIGGERED;
+					}
+				}
+				else if(t->params[0].operator == LOWERTHAN && t->params[1].operator == LOWERTHAN)
+				{
+					if ((analog_io.in[t->params[0].adc_num] <= t->params[0].adc_val) && (analog_io.in[t->params[1].adc_num] <= t->params[1].adc_val))
+					{
+						return TRIGGERED;
+					}
+				}
+			break;
+		}
+
+	}
+	return DONTCARE;
+}
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

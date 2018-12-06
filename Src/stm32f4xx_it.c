@@ -37,6 +37,7 @@
 
 /* USER CODE BEGIN 0 */
 uint16_t scheduler_timer = 0;
+#include "usbd_analog_io.h"
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/

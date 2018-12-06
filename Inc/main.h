@@ -61,6 +61,10 @@
 
 #define B1_Pin GPIO_PIN_13
 #define B1_GPIO_Port GPIOC
+#define TRIGGER_IN_Pin GPIO_PIN_0
+#define TRIGGER_IN_GPIO_Port GPIOC
+#define TRIGGER_OUT_Pin GPIO_PIN_1
+#define TRIGGER_OUT_GPIO_Port GPIOC
 #define ANALOG_IN_1_Pin GPIO_PIN_0
 #define ANALOG_IN_1_GPIO_Port GPIOA
 #define ANALOG_IN_0_Pin GPIO_PIN_1
