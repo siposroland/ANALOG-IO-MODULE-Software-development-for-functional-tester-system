@@ -256,6 +256,7 @@ void TIM3_IRQHandler(void)
   if (external_counter > 59)
   {
 	  toggle_pps();
+	  external_counter = 0;
   }
   /* USER CODE END TIM3_IRQn 1 */
 }
