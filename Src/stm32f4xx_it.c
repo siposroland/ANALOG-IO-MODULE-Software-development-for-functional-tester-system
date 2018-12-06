@@ -36,7 +36,7 @@
 #include "stm32f4xx_it.h"
 
 /* USER CODE BEGIN 0 */
-
+uint16_t scheduler_timer = 0;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -181,14 +181,28 @@ void PendSV_Handler(void)
 */
 void SysTick_Handler(void)
 {
-  /* USER CODE BEGIN SysTick_IRQn 0 */
-
-  /* USER CODE END SysTick_IRQn 0 */
-  HAL_IncTick();
-  HAL_SYSTICK_IRQHandler();
-  /* USER CODE BEGIN SysTick_IRQn 1 */
-
-  /* USER CODE END SysTick_IRQn 1 */
+	/* USER CODE BEGIN SysTick_IRQn 0 */
+	static uint8_t trigger_timeout = 0;
+	/* USER CODE END SysTick_IRQn 0 */
+	HAL_IncTick();
+	HAL_SYSTICK_IRQHandler();
+	/* USER CODE BEGIN SysTick_IRQn 1 */
+	scheduler_timer ++;
+	if (scheduler_timer > 10)
+	{
+	  analog_io_report_flag = SEND_REPORT;
+	  scheduler_timer = 0;
+	}
+	if (analog_io_do_trigger == DO_TRIGGER)
+	{
+		 trigger_timeout ++;
+		 if(trigger_timeout > 500)
+		 {
+			HAL_GPIO_WritePin(TRIGGER_OUT_GPIO_Port, TRIGGER_OUT_Pin, GPIO_PIN_RESET);
+			trigger_timeout = 0;
+			analog_io_do_trigger = DONTCARE;
+		 }
+	}
 }
 
 /******************************************************************************/

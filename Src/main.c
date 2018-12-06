@@ -78,11 +78,14 @@ void SystemClock_Config(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-uint16_t adc2 = 0;
-uint16_t adc1 = 0;
+uint16_t adc2[20] = {0};
+uint16_t adc1[20] = {0};
 uint16_t sinus[200];
 uint16_t constant[200]= {500};
 uint8_t input_report[7] = {0};
+uint8_t flag = 0;
+uint8_t output_report[64] = {0};
+uint8_t trig_event_to_delete = 0;
 /* USER CODE END 0 */
 
 /**
@@ -96,7 +99,7 @@ int main(void)
 	uint16_t sample;
 	for (uint8_t i = 0; i < SAMPLES; i++)
 	{
-		sample = (uint16_t)rint(( sin(i*2*3.14/SAMPLES)+1)*2048 );
+		sample = (uint16_t)rint(( sin(i*2*3.14/SAMPLES)+1)*1024 );
 		if (sample >= 4095)
 		{
 			sinus[i] = 4095;
@@ -140,23 +143,60 @@ int main(void)
   // DAC ==========================================
    HAL_DAC_Init(&hdac);
    HAL_TIM_Base_Start(&htim6);
-   HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t*)constant, SAMPLES, DAC_ALIGN_12B_R);
+   HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t*)sinus, SAMPLES, DAC_ALIGN_12B_R);
    // ADC ==========================================
-   HAL_TIM_Base_Start(&htim2);
-   HAL_ADC_Start_DMA(&hadc1, (uint32_t*)analog_io.in[0], 1);
-   HAL_ADC_Start_DMA(&hadc2, (uint32_t*)analog_io.in[1], 1);
+   HAL_TIM_Base_Start_IT(&htim2);
+   HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc1, 20);
+   HAL_ADC_Start_DMA(&hadc2, (uint32_t*)adc2, 20);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  uint8_t i = 0;
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
-	  HAL_Delay(100);
-	  USBD_HID_Analog_IO_CreateReport(input_report);
-	  USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS,(uint8_t*)&input_report, 7);
+		  analog_io.in[0] = adc1[0];
+		  analog_io.in[1] = adc2[0];
+
+		  for(i = 0; i < ANALOG_IO_MAX_TRIG_NUM; i++)
+			{
+				if(analog_io_do_trigger != TRIGGERED)
+				{
+					analog_io_do_trigger = USBD_HID_Analog_IO_Check_Trigger_Event(analog_io_trig_events, i);
+					if (analog_io_do_trigger == TRIGGERED)
+					{
+						trig_event_to_delete = i;
+					}
+				}
+			}
+
+			if(analog_io_do_trigger == TRIGGERED)
+			{
+				HAL_GPIO_WritePin(TRIGGER_OUT_GPIO_Port, TRIGGER_OUT_Pin, GPIO_PIN_SET);
+				analog_io_do_trigger = DO_TRIGGER;
+				USBD_HID_Analog_IO_Reset_Trigger_Event(&analog_io_trig_events[trig_event_to_delete]);
+			}
+
+			// Create and send digital IO report
+			if (analog_io_report_flag == SEND_REPORT)
+			{
+			  USBD_HID_Analog_IO_CreateReport(input_report);
+			  USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS,(uint8_t*)&input_report, 7);
+			  analog_io_report_flag = NO_REPORT;
+			}
+
+			// Store digital IO changes
+			if (analog_io_change_flag == CHANGED)
+			{
+				USBD_HID_Analog_IO_Init(&analog_io_new_state);
+				USBD_HID_Analog_IO_Set_Changes(output_report);
+				analog_io_change_flag = UNCHANGED;
+				analog_io_change_enable = 1;
+			}
+	  //}
   }
   /* USER CODE END 3 */
 
@@ -229,7 +269,54 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void USB_RX_Interrupt(void)
+{
+	uint8_t i;
+	HID_ANALOG_IO_Output length = LENGTH_NOTHING;
+	USBD_CUSTOM_HID_HandleTypeDef *myusb=(USBD_CUSTOM_HID_HandleTypeDef *)hUsbDeviceFS.pClassData;
 
+	//Clear arr
+	for(i=0;i<64;i++)
+	{
+		output_report[i]=0;
+	}
+
+	// First byte contains numbers of datas in byte length
+	length = myusb->Report_buf[0];
+
+	// Copy the output report
+	for( i = 0; i < length; i++ )
+	{
+		output_report[i]=myusb->Report_buf[i+1];
+	}
+
+	// Handle report based on the length
+	switch (length)
+	{
+		case LENGTH_NOTHING:
+			break;
+		case LENGTH_TRIGGER_EVENT:
+			USBD_HID_Analog_IO_Process_Trigger_Event(output_report, analog_io_trig_events);
+			break;
+		case LENGTH_TRIGGER:
+			// Defend to the multiple triggering
+			if (analog_io_change_enable)
+			{
+				USBD_HID_Analog_IO_Trigger(output_report);
+			}
+			break;
+		case LENGTH_ANALOG_IO:
+			analog_io_change_flag = CHANGED;
+			break;
+		default:
+			break;
+	}
+
+	// Test answer
+	/*HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+	input_report[1] = 1;
+	USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS,(uint8_t*)&input_report, 11);*/
+}
 /* USER CODE END 4 */
 
 /**
