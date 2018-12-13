@@ -125,18 +125,12 @@ __ALIGN_BEGIN static uint8_t CUSTOM_HID_ReportDesc_FS[USBD_CUSTOM_HID_REPORT_DES
 	0xa1, 0x01,                    // COLLECTION (Application)
 
 	// Input report
-	// 1. 8 bit IO directions
-	0x75, 0x01,                    //   REPORT_SIZE (1)
-	0x95, 0x08,                    //   REPORT_COUNT (8)
-	0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
-	0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
-	0x81, 0x02,                    //   INPUT (Data,Var,Abs)
-	// 2. 10 byte data:
+	// 1. 7 byte data:
 	// - 3 byte IO values (xxxx|yyyy format)
 	// - 3 byte for date (year/month/day)
 	// - 4 byte for time (hour/minute/second/sub second)
 	0x75, 0x08,                    //   REPORT_SIZE (8)
-	0x95, 0x0a,                    //   REPORT_COUNT (10)
+	0x95, 0x07,                    //   REPORT_COUNT (7)
 	0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
 	0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
 	0x81, 0x00,                    //   INPUT (Data,Ary,Abs)

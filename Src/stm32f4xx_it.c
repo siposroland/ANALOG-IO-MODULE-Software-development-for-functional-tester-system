@@ -253,7 +253,7 @@ void TIM3_IRQHandler(void)
   /* USER CODE END TIM3_IRQn 0 */
   HAL_TIM_IRQHandler(&htim3);
   /* USER CODE BEGIN TIM3_IRQn 1 */
-  if (external_counter > 59)
+  if (external_counter > 248)
   {
 	  toggle_pps();
 	  external_counter = 0;

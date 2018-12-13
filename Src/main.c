@@ -109,6 +109,10 @@ int main(void)
 			sinus[i] = sample;
 		}
 	}
+	for (uint8_t i = 0; i < SAMPLES; i++)
+	{
+		constant[i] = 1000;
+	}
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -186,7 +190,7 @@ int main(void)
 			if (analog_io_report_flag == SEND_REPORT)
 			{
 			  USBD_HID_Analog_IO_CreateReport(input_report);
-			  USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS,(uint8_t*)&input_report, 7);
+			  USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS,(uint8_t*)&input_report, 4);
 			  analog_io_report_flag = NO_REPORT;
 			}
 
